@@ -96,6 +96,8 @@ struct PopupView: View {
             }
         }
         .frame(maxHeight: .infinity)
+        .onHover { if !$0 { model.hidePreview() } }
+        .onPreferenceChange(SelectedRowFrameKey.self) { model.selectedRowFrame = $0 }
 
         Hairline()
         KeyHints(tab: model.tab, pastes: model.pastesOnSelect)
@@ -348,7 +350,13 @@ private struct ClipRow: View {
         .frame(minHeight: 36)
         .background(RoundedRectangle(cornerRadius: 6).fill(isSelected ? Theme.muted : .clear))
         .contentShape(Rectangle())
-        .onHover { if $0 { model.selection = index } }
+        .onHover { if $0 { model.hoverRow(index) } }
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: SelectedRowFrameKey.self,
+                                       value: isSelected ? geometry.frame(in: .global) : nil)
+            }
+        }
         .onTapGesture { model.select(content) }
     }
 

@@ -26,6 +26,14 @@ struct GroupForm {
     var name = ""
 }
 
+/// The row the preview card describes.
+struct PreviewTarget {
+    let content: ClipContent
+    let title: String?
+    let date: Date
+    let dateVerb: String // "copied" or "saved"
+}
+
 struct SavedSection: Identifiable {
     let group: ClipGroup? // nil is Ungrouped
     let items: [SavedItem]
@@ -34,13 +42,17 @@ struct SavedSection: Identifiable {
 
 final class PopupModel: ObservableObject {
     // Guarded: the search field writes back unchanged values on focus.
-    @Published var tab: Tab = .recent { didSet { if tab != oldValue { selection = 0 } } }
-    @Published var query = "" { didSet { if query != oldValue { selection = 0 } } }
+    @Published var tab: Tab = .recent { didSet { if tab != oldValue { selection = 0; hidePreview() } } }
+    @Published var query = "" { didSet { if query != oldValue { selection = 0; hidePreview() } } }
     @Published var selection = 0
     @Published var itemForm: ItemForm?
     @Published var groupForm: GroupForm?
     @Published var confirmingClear = false
     @Published var page: Page = .clipboard
+    @Published var previewShown = false
+    /// The selected row's frame in the popup's coordinate space, for placing the preview card.
+    @Published var selectedRowFrame: CGRect?
+    private var previewDelay: DispatchWorkItem?
 
     let history: HistoryStore
     let saved: SavedStore
@@ -68,6 +80,7 @@ final class PopupModel: ObservableObject {
         groupForm = nil
         confirmingClear = false
         page = .clipboard
+        hidePreview()
     }
 
     // MARK: Rows
@@ -121,6 +134,9 @@ final class PopupModel: ObservableObject {
         case (36, true), (76, true): useSelected(paste: false) // cmd+return copies only
         case (53, _): onClose() // escape
         case (48, _): tab = tab == .recent ? .saved : .recent
+        case (49, false) where query.isEmpty: // space; types normally once a search has started
+            previewDelay?.cancel()
+            previewShown.toggle()
         case (51, true): deleteSelected() // cmd+backspace
         default:
             guard command else { return false }
@@ -138,6 +154,45 @@ final class PopupModel: ObservableObject {
     private func moveSelection(_ delta: Int) {
         guard rowCount > 0 else { return }
         selection = min(max(selection + delta, 0), rowCount - 1)
+        schedulePreview()
+    }
+
+    func hoverRow(_ index: Int) {
+        guard index != selection else { return }
+        selection = index
+        schedulePreview()
+    }
+
+    // MARK: Preview
+
+    /// Only user-driven selection schedules it, so opening the popup doesn't pop a card.
+    private func schedulePreview() {
+        guard !previewShown else { return } // already showing: the card follows the selection
+        previewDelay?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.previewShown = true }
+        previewDelay = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
+    }
+
+    func hidePreview() {
+        previewDelay?.cancel()
+        previewShown = false
+    }
+
+    var previewTarget: PreviewTarget? {
+        guard page == .clipboard, !isFormOpen else { return nil }
+        let target: PreviewTarget
+        switch tab {
+        case .recent:
+            guard recentRows.indices.contains(selection) else { return nil }
+            let item = recentRows[selection]
+            target = PreviewTarget(content: item.content, title: nil, date: item.copiedAt, dateVerb: "copied")
+        case .saved:
+            guard savedRows.indices.contains(selection) else { return nil }
+            let item = savedRows[selection]
+            target = PreviewTarget(content: item.content, title: item.title, date: item.savedAt, dateVerb: "saved")
+        }
+        return ItemPreview.isNeeded(for: target.content, title: target.title) ? target : nil
     }
 
     // MARK: Actions
