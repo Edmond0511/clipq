@@ -1,7 +1,7 @@
 import ClipqCore
 import SwiftUI
 
-/// shadcn Command palette: search, tabs, list, key hints.
+/// shadcn Command palette: search, tabs, list, key hints. Settings is a page inside it.
 struct PopupView: View {
     @ObservedObject var model: PopupModel
     @ObservedObject var history: HistoryStore
@@ -16,67 +16,10 @@ struct PopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.mutedForeground)
-                TextField("Search clipboard", text: $model.query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.foreground)
-                    .focused($searchFocused)
-                Button { model.openSettings() } label: {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.icon)
-                .help("Settings (⌘,)")
-                Button { model.onClose() } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.icon)
-                .help("Close (esc)")
+            switch model.page {
+            case .clipboard: clipboardPage
+            case .settings: settingsPage
             }
-            .padding(.leading, 14)
-            .padding(.trailing, 10)
-            .frame(height: 46)
-            Hairline()
-
-            HStack {
-                Segmented(selection: $model.tab, options: [("Recent", .recent), ("Saved", .saved)])
-                Spacer()
-                switch model.tab {
-                case .recent where !history.items.isEmpty:
-                    Button {
-                        model.confirmingClear = true
-                    } label: {
-                        Label("Clear", systemImage: "trash")
-                    }
-                    .buttonStyle(.ghost)
-                case .saved:
-                    Button {
-                        model.groupForm = GroupForm(groupID: nil)
-                    } label: {
-                        Label("New group", systemImage: "plus")
-                    }
-                    .buttonStyle(.ghost)
-                default:
-                    EmptyView()
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-
-            Group {
-                switch model.tab {
-                case .recent: RecentList(model: model)
-                case .saved: SavedList(model: model)
-                }
-            }
-            .frame(maxHeight: .infinity)
-
-            Hairline()
-            KeyHints(tab: model.tab, pastes: model.pastesOnSelect)
         }
         .frame(width: 380, height: 460)
         // Behind everything, so any surface that isn't a control drags the window.
@@ -93,6 +36,100 @@ struct PopupView: View {
         .onChange(of: model.isFormOpen) { open in
             if !open { searchFocused = true }
         }
+        .onChange(of: model.page) { page in
+            if page == .clipboard { searchFocused = true }
+        }
+    }
+
+    @ViewBuilder private var clipboardPage: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mutedForeground)
+            TextField("Search clipboard", text: $model.query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.foreground)
+                .focused($searchFocused)
+            Button { model.page = .settings } label: {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.icon)
+            .help("Settings (⌘,)")
+            CloseButton(model: model)
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 10)
+        .frame(height: 46)
+        Hairline()
+
+        HStack {
+            Segmented(selection: $model.tab, options: [("Recent", .recent), ("Saved", .saved)])
+            Spacer()
+            switch model.tab {
+            case .recent where !history.items.isEmpty:
+                Button {
+                    model.confirmingClear = true
+                } label: {
+                    Label("Clear", systemImage: "trash")
+                }
+                .buttonStyle(.ghost)
+            case .saved:
+                Button {
+                    model.groupForm = GroupForm(groupID: nil)
+                } label: {
+                    Label("New group", systemImage: "plus")
+                }
+                .buttonStyle(.ghost)
+            default:
+                EmptyView()
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+
+        Group {
+            switch model.tab {
+            case .recent: RecentList(model: model)
+            case .saved: SavedList(model: model)
+            }
+        }
+        .frame(maxHeight: .infinity)
+
+        Hairline()
+        KeyHints(tab: model.tab, pastes: model.pastesOnSelect)
+    }
+
+    @ViewBuilder private var settingsPage: some View {
+        HStack(spacing: 8) {
+            Button { model.page = .clipboard } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.icon)
+            .help("Back (esc)")
+            Text("Settings")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.foreground)
+            Spacer()
+            CloseButton(model: model)
+        }
+        .padding(.leading, 10)
+        .padding(.trailing, 10)
+        .frame(height: 46)
+        Hairline()
+        ScrollView {
+            SettingsView(prefs: model.prefs)
+        }
+        .frame(maxHeight: .infinity)
+        Hairline()
+        HStack {
+            KeyHint(keys: "esc", label: "Back")
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 36)
+        .background(Theme.muted.opacity(0.4).allowsHitTesting(false))
     }
 
     @ViewBuilder private var forms: some View {
@@ -129,12 +166,33 @@ private struct KeyHints: View {
     }
 
     private func hint(_ keys: String, _ label: String) -> some View {
+        KeyHint(keys: keys, label: label)
+    }
+}
+
+private struct KeyHint: View {
+    let keys: String
+    let label: String
+
+    var body: some View {
         HStack(spacing: 5) {
             Kbd(keys: keys)
             Text(label)
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.mutedForeground)
         }
+    }
+}
+
+private struct CloseButton: View {
+    let model: PopupModel
+
+    var body: some View {
+        Button { model.onClose() } label: {
+            Image(systemName: "xmark")
+        }
+        .buttonStyle(.icon)
+        .help("Close")
     }
 }
 

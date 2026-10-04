@@ -5,6 +5,10 @@ enum Tab: Hashable {
     case recent, saved
 }
 
+enum Page: Hashable {
+    case clipboard, settings
+}
+
 struct ItemForm {
     enum Target {
         case new(ClipContent)
@@ -36,13 +40,13 @@ final class PopupModel: ObservableObject {
     @Published var itemForm: ItemForm?
     @Published var groupForm: GroupForm?
     @Published var confirmingClear = false
+    @Published var page: Page = .clipboard
 
     let history: HistoryStore
     let saved: SavedStore
     let storage: Storage
     let prefs: Preferences
     var onClose: () -> Void = {}
-    var onOpenSettings: () -> Void = {}
     private let thumbnails = NSCache<NSString, NSImage>()
 
     init(history: HistoryStore, saved: SavedStore, storage: Storage, prefs: Preferences) {
@@ -63,6 +67,7 @@ final class PopupModel: ObservableObject {
         itemForm = nil
         groupForm = nil
         confirmingClear = false
+        page = .clipboard
     }
 
     // MARK: Rows
@@ -103,6 +108,12 @@ final class PopupModel: ObservableObject {
     /// Returns true when the key was handled and should not reach the search field.
     func handleKey(_ event: NSEvent) -> Bool {
         let command = event.modifierFlags.contains(.command)
+        // Settings only claims Esc and ⌘, so the shortcut recorder gets every other key.
+        if page == .settings {
+            guard event.keyCode == 53 || (command && event.charactersIgnoringModifiers == ",") else { return false }
+            page = .clipboard
+            return true
+        }
         switch (event.keyCode, command) {
         case (125, _): moveSelection(1) // down
         case (126, _): moveSelection(-1) // up
@@ -116,7 +127,7 @@ final class PopupModel: ObservableObject {
             switch event.charactersIgnoringModifiers {
             case "1": tab = .recent
             case "2": tab = .saved
-            case ",": openSettings()
+            case ",": page = .settings
             case "s": if tab == .recent, recentRows.indices.contains(selection) { startSave(recentRows[selection]) }
             default: return false
             }
@@ -146,11 +157,6 @@ final class PopupModel: ObservableObject {
         if paste && written { AutoPaste.pasteIntoFrontApp() }
     }
 
-    /// Closes the panel first so it doesn't float over Settings.
-    func openSettings() {
-        onClose()
-        onOpenSettings()
-    }
 
     private func useSelected(paste: Bool) {
         switch tab {
@@ -162,6 +168,7 @@ final class PopupModel: ObservableObject {
     func clearRecent() {
         history.clear()
         confirmingClear = false
+        page = .clipboard
     }
 
     private func deleteSelected() {

@@ -15,14 +15,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var panel = PanelController(model: model)
     private var subscriptions = Set<AnyCancellable>()
     private var statusItem: NSStatusItem!
-    private var settingsWindow: NSWindow?
     private let pauseItem = NSMenuItem(title: "Pause Capturing", action: #selector(togglePause), keyEquivalent: "")
     private let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLogin), keyEquivalent: "")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         prefs.$historyLimit.sink { [weak self] in self?.history.capacity = $0 }.store(in: &subscriptions)
         prefs.$captureImages.sink { [weak self] in self?.history.capturesImages = $0 }.store(in: &subscriptions)
-        model.onOpenSettings = { [weak self] in self?.openSettings() }
         monitor.start()
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in self?.panel.toggle() }
         setUpStatusItem()
@@ -80,20 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         LoginItem.setEnabled(!LoginItem.isEnabled)
     }
 
-    @objc func openSettings() {
-        if settingsWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(prefs: prefs)))
-            window.title = "clipq Settings"
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            // Hand focus back to the previous app, so Cmd+V and auto-paste reach it.
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification, object: window, queue: .main
-            ) { _ in NSApp.hide(nil) }
-            settingsWindow = window
-        }
-        NSApp.activate(ignoringOtherApps: true)
-        settingsWindow?.center()
-        settingsWindow?.makeKeyAndOrderFront(nil)
+    @objc private func openSettings() {
+        panel.show()
+        model.page = .settings
     }
 }
