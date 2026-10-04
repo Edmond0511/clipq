@@ -8,6 +8,7 @@ xcuserdata/
 # Build artifacts (rebuilt by scripts/build-app.sh and CI)
 npm/dist/
 npm/README.md
+npm/LICENSE
 *.tgz
 
 # Node

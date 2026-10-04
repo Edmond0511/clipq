@@ -15,8 +15,8 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: swift test
       - run: scripts/build-app.sh
-      # npm reads the README from the package folder, not the repo root.
-      - run: cp README.md npm/README.md
+      # npm reads README and LICENSE from the package folder, not the repo root.
+      - run: cp README.md LICENSE npm/
       - run: npm publish
         working-directory: npm
         env:
