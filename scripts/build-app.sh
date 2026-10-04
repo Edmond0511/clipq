@@ -18,6 +18,11 @@ fi
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/Clipq" "$APP/Contents/MacOS/Clipq"
+# Ad-hoc signatures default to a per-build hash, so macOS drops the Accessibility grant
+# on every update. An identifier-only requirement keeps it. Signed before the bundle
+# exists around it, because codesign refuses the bundle (see below).
+codesign --force --sign - --identifier com.clipq.Clipq \
+  -r='designated => identifier "com.clipq.Clipq"' "$APP/Contents/MacOS/Clipq"
 # App icon (Finder, Activity Monitor, permission prompts). Regenerate with scripts/make-icon.sh.
 cp assets/icon/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # SwiftPM's generated Bundle.module looks for resource bundles at the .app root.
