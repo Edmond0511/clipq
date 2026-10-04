@@ -16,8 +16,10 @@ else
 fi
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/Clipq" "$APP/Contents/MacOS/Clipq"
+# App icon (Finder, Activity Monitor, permission prompts). Regenerate with scripts/make-icon.sh.
+cp assets/icon/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # SwiftPM's generated Bundle.module looks for resource bundles at the .app root.
 cp -R "$BIN_DIR/KeyboardShortcuts_KeyboardShortcuts.bundle" "$APP/"
 
@@ -29,6 +31,7 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <key>CFBundleIdentifier</key><string>com.clipq.Clipq</string>
   <key>CFBundleName</key><string>Clipq</string>
   <key>CFBundleExecutable</key><string>Clipq</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
