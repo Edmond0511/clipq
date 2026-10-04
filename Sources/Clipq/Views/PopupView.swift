@@ -25,8 +25,14 @@ struct PopupView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.foreground)
                     .focused($searchFocused)
+                Button { model.onClose() } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.icon)
+                .help("Close (esc)")
             }
-            .padding(.horizontal, 14)
+            .padding(.leading, 14)
+            .padding(.trailing, 10)
             .frame(height: 46)
             Hairline()
 

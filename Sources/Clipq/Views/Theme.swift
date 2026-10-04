@@ -86,6 +86,33 @@ extension ButtonStyle where Self == ShadButtonStyle {
     static var ghost: ShadButtonStyle { ShadButtonStyle(variant: .ghost) }
 }
 
+/// shadcn ghost icon Button (the Dialog close "X").
+struct IconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        IconButton(configuration: configuration)
+    }
+
+    private struct IconButton: View {
+        let configuration: Configuration
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(hovering ? Theme.foreground : Theme.mutedForeground)
+                .frame(width: 24, height: 24)
+                .background(RoundedRectangle(cornerRadius: 6).fill(hovering ? Theme.muted : .clear))
+                .opacity(configuration.isPressed ? 0.7 : 1)
+                .contentShape(Rectangle())
+                .onHover { hovering = $0 }
+        }
+    }
+}
+
+extension ButtonStyle where Self == IconButtonStyle {
+    static var icon: IconButtonStyle { IconButtonStyle() }
+}
+
 extension View {
     /// shadcn Input chrome around a plain TextField or a menu label.
     func inputChrome(focused: Bool = false) -> some View {
