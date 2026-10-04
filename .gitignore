@@ -19,8 +19,9 @@ npm-debug.log*
 .env.*
 .npmrc
 
-# Claude Code personal settings (shared settings.json and hooks/ stay tracked)
-.claude/settings.local.json
+# Claude Code (local only)
+CLAUDE.md
+.claude/
 
 # macOS
 .DS_Store
