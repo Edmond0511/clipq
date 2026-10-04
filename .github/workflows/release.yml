@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: swift test
+      - run: scripts/build-app.sh
+      # npm reads the README from the package folder, not the repo root.
+      - run: cp README.md npm/README.md
+      - run: npm publish
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
