@@ -2,7 +2,7 @@ import AppKit
 import ClipqCore
 import SwiftUI
 
-/// Borderless-looking panels can't become key by default, and we need key status for typing.
+/// Borderless panels can't become key by default, and we need key status for typing.
 private final class KeyPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
@@ -17,16 +17,15 @@ final class PanelController: NSObject, NSWindowDelegate {
         self.model = model
         panel = KeyPanel(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 460),
-            styleMask: [.nonactivatingPanel, .titled, .fullSizeContentView],
+            styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: true
         )
         super.init()
-        panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
-        for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-            panel.standardWindowButton(button)?.isHidden = true
-        }
+        // Transparent window so the SwiftUI view's rounded corners and border show.
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = true
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.hidesOnDeactivate = false
@@ -45,6 +44,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.contentView = NSHostingView(rootView: PopupView(model: model))
         positionAtMouse()
         panel.makeKeyAndOrderFront(nil)
+        panel.invalidateShadow()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, event.window === self.panel, !self.model.isFormOpen else { return event }
             return self.model.handleKey(event) ? nil : event

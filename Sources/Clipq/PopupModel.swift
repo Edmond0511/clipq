@@ -85,6 +85,12 @@ final class PopupModel: ObservableObject {
         return image
     }
 
+    /// "1280 × 720", from the image's pixel dimensions.
+    func pixelSize(_ fileName: String) -> String? {
+        guard let rep = thumbnail(fileName)?.representations.first, rep.pixelsWide > 0 else { return nil }
+        return "\(rep.pixelsWide) × \(rep.pixelsHigh)"
+    }
+
     // MARK: Keyboard
 
     /// Returns true when the key was handled and should not reach the search field.
