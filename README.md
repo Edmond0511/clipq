@@ -1,6 +1,6 @@
 # clipq
 
-Win+V style clipboard history for macOS.
+clipboard history for macOS.
 
 - **Recent**: your last 25 copies (text and images), kept across restarts.
 - **Saved**: items you want to keep, organized into groups, with optional titles.
