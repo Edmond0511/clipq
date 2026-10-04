@@ -25,6 +25,11 @@ struct PopupView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.foreground)
                     .focused($searchFocused)
+                Button { model.openSettings() } label: {
+                    Image(systemName: "gearshape")
+                }
+                .buttonStyle(.icon)
+                .help("Settings (⌘,)")
                 Button { model.onClose() } label: {
                     Image(systemName: "xmark")
                 }
@@ -37,15 +42,25 @@ struct PopupView: View {
             Hairline()
 
             HStack {
-                TabsBar(tab: $model.tab)
+                Segmented(selection: $model.tab, options: [("Recent", .recent), ("Saved", .saved)])
                 Spacer()
-                if model.tab == .saved {
+                switch model.tab {
+                case .recent where !history.items.isEmpty:
+                    Button {
+                        model.confirmingClear = true
+                    } label: {
+                        Label("Clear", systemImage: "trash")
+                    }
+                    .buttonStyle(.ghost)
+                case .saved:
                     Button {
                         model.groupForm = GroupForm(groupID: nil)
                     } label: {
                         Label("New group", systemImage: "plus")
                     }
                     .buttonStyle(.ghost)
+                default:
+                    EmptyView()
                 }
             }
             .padding(.horizontal, 8)
@@ -61,7 +76,7 @@ struct PopupView: View {
             .frame(maxHeight: .infinity)
 
             Hairline()
-            KeyHints(tab: model.tab)
+            KeyHints(tab: model.tab, pastes: model.pastesOnSelect)
         }
         .frame(width: 380, height: 460)
         // Behind everything, so any surface that isn't a control drags the window.
@@ -85,51 +100,28 @@ struct PopupView: View {
             Dialog { ItemFormView(model: model, form: form, groups: saved.groups) }
         } else if let form = model.groupForm {
             Dialog { GroupFormView(model: model, form: form) }
+        } else if model.confirmingClear {
+            Dialog { ConfirmClearView(model: model, count: history.items.count) }
         }
-    }
-}
-
-/// shadcn Tabs: a muted track with the active tab raised.
-private struct TabsBar: View {
-    @Binding var tab: Tab
-
-    var body: some View {
-        HStack(spacing: 0) {
-            item("Recent", .recent)
-            item("Saved", .saved)
-        }
-        .padding(3)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Theme.muted))
-    }
-
-    private func item(_ title: String, _ value: Tab) -> some View {
-        let active = tab == value
-        return Button { tab = value } label: {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(active ? Theme.foreground : Theme.mutedForeground)
-                .frame(width: 72, height: 24)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(active ? Theme.background : .clear)
-                        .shadow(color: .black.opacity(active ? 0.08 : 0), radius: 1, y: 1)
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }
 
 private struct KeyHints: View {
     let tab: Tab
+    let pastes: Bool
 
     var body: some View {
-        HStack(spacing: 14) {
-            hint("↩", "Copy")
+        HStack(spacing: 12) {
+            if pastes {
+                hint("↩", "Paste")
+                hint("⌘↩", "Copy")
+            } else {
+                hint("↩", "Copy")
+            }
             if tab == .recent { hint("⌘S", "Save") }
             hint("⌘⌫", "Delete")
             Spacer()
-            hint("⇥", "Switch tab")
+            hint("⇥", "Tabs")
         }
         .padding(.horizontal, 12)
         .frame(height: 36)
@@ -299,7 +291,7 @@ private struct ClipRow: View {
         .background(RoundedRectangle(cornerRadius: 6).fill(isSelected ? Theme.muted : .clear))
         .contentShape(Rectangle())
         .onHover { if $0 { model.selection = index } }
-        .onTapGesture { model.copy(content) }
+        .onTapGesture { model.select(content) }
     }
 
     @ViewBuilder private var leading: some View {

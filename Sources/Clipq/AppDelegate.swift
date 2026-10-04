@@ -1,21 +1,28 @@
 import AppKit
 import ClipqCore
+import Combine
 import KeyboardShortcuts
 import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let storage = Storage()
-    private lazy var history = HistoryStore(storage: storage)
+    private let prefs = Preferences()
+    private lazy var history = HistoryStore(storage: storage, capacity: prefs.historyLimit)
     private lazy var saved = SavedStore(storage: storage)
     private lazy var monitor = ClipboardMonitor(history: history)
-    private lazy var panel = PanelController(model: PopupModel(history: history, saved: saved, storage: storage))
+    private lazy var model = PopupModel(history: history, saved: saved, storage: storage, prefs: prefs)
+    private lazy var panel = PanelController(model: model)
+    private var subscriptions = Set<AnyCancellable>()
     private var statusItem: NSStatusItem!
     private var settingsWindow: NSWindow?
     private let pauseItem = NSMenuItem(title: "Pause Capturing", action: #selector(togglePause), keyEquivalent: "")
     private let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLogin), keyEquivalent: "")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        prefs.$historyLimit.sink { [weak self] in self?.history.capacity = $0 }.store(in: &subscriptions)
+        prefs.$captureImages.sink { [weak self] in self?.history.capturesImages = $0 }.store(in: &subscriptions)
+        model.onOpenSettings = { [weak self] in self?.openSettings() }
         monitor.start()
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in self?.panel.toggle() }
         setUpStatusItem()
@@ -63,20 +70,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateIcon()
     }
 
+    /// Same confirmation as the popup's Clear button.
     @objc private func clearRecent() {
-        history.clear()
+        panel.show()
+        model.confirmingClear = true
     }
 
     @objc private func toggleLogin() {
         LoginItem.setEnabled(!LoginItem.isEnabled)
     }
 
-    @objc private func openSettings() {
+    @objc func openSettings() {
         if settingsWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(prefs: prefs)))
             window.title = "clipq Settings"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
+            // Hand focus back to the previous app, so Cmd+V and auto-paste reach it.
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification, object: window, queue: .main
+            ) { _ in NSApp.hide(nil) }
             settingsWindow = window
         }
         NSApp.activate(ignoringOtherApps: true)

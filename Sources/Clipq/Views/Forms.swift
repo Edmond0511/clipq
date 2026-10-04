@@ -195,3 +195,23 @@ struct GroupFormView: View {
         .onAppear { DispatchQueue.main.async { nameFocused = true } }
     }
 }
+
+struct ConfirmClearView: View {
+    let model: PopupModel
+    let count: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            DialogHeader(title: "Clear Recent?", detail: nil)
+            Text("This removes \(count == 1 ? "1 item" : "\(count) items") from Recent. Saved items stay. This can't be undone.")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.mutedForeground)
+                .fixedSize(horizontal: false, vertical: true)
+            DialogButtons(
+                confirm: "Clear",
+                onCancel: { model.confirmingClear = false },
+                onConfirm: { model.clearRecent() }
+            )
+        }
+    }
+}

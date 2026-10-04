@@ -35,20 +35,26 @@ final class PopupModel: ObservableObject {
     @Published var selection = 0
     @Published var itemForm: ItemForm?
     @Published var groupForm: GroupForm?
+    @Published var confirmingClear = false
 
     let history: HistoryStore
     let saved: SavedStore
     let storage: Storage
+    let prefs: Preferences
     var onClose: () -> Void = {}
+    var onOpenSettings: () -> Void = {}
     private let thumbnails = NSCache<NSString, NSImage>()
 
-    init(history: HistoryStore, saved: SavedStore, storage: Storage) {
+    init(history: HistoryStore, saved: SavedStore, storage: Storage, prefs: Preferences) {
         self.history = history
         self.saved = saved
         self.storage = storage
+        self.prefs = prefs
     }
 
-    var isFormOpen: Bool { itemForm != nil || groupForm != nil }
+    var isFormOpen: Bool { itemForm != nil || groupForm != nil || confirmingClear }
+
+    var pastesOnSelect: Bool { prefs.autoPaste && AutoPaste.isTrusted }
 
     func reset() {
         tab = .recent
@@ -56,6 +62,7 @@ final class PopupModel: ObservableObject {
         selection = 0
         itemForm = nil
         groupForm = nil
+        confirmingClear = false
     }
 
     // MARK: Rows
@@ -99,7 +106,8 @@ final class PopupModel: ObservableObject {
         switch (event.keyCode, command) {
         case (125, _): moveSelection(1) // down
         case (126, _): moveSelection(-1) // up
-        case (36, _), (76, _): copySelected() // return, keypad enter
+        case (36, false), (76, false): useSelected(paste: pastesOnSelect) // return, keypad enter
+        case (36, true), (76, true): useSelected(paste: false) // cmd+return copies only
         case (53, _): onClose() // escape
         case (48, _): tab = tab == .recent ? .saved : .recent
         case (51, true): deleteSelected() // cmd+backspace
@@ -108,6 +116,7 @@ final class PopupModel: ObservableObject {
             switch event.charactersIgnoringModifiers {
             case "1": tab = .recent
             case "2": tab = .saved
+            case ",": openSettings()
             case "s": if tab == .recent, recentRows.indices.contains(selection) { startSave(recentRows[selection]) }
             default: return false
             }
@@ -123,15 +132,36 @@ final class PopupModel: ObservableObject {
     // MARK: Actions
 
     func copy(_ content: ClipContent) {
-        Pasteboard.write(content, storage: storage)
-        onClose()
+        use(content, paste: false)
     }
 
-    private func copySelected() {
+    /// What Return and clicking a row do: paste when auto-paste is available, else copy.
+    func select(_ content: ClipContent) {
+        use(content, paste: pastesOnSelect)
+    }
+
+    private func use(_ content: ClipContent, paste: Bool) {
+        let written = Pasteboard.write(content, storage: storage)
+        onClose()
+        if paste && written { AutoPaste.pasteIntoFrontApp() }
+    }
+
+    /// Closes the panel first so it doesn't float over Settings.
+    func openSettings() {
+        onClose()
+        onOpenSettings()
+    }
+
+    private func useSelected(paste: Bool) {
         switch tab {
-        case .recent: if recentRows.indices.contains(selection) { copy(recentRows[selection].content) }
-        case .saved: if savedRows.indices.contains(selection) { copy(savedRows[selection].content) }
+        case .recent: if recentRows.indices.contains(selection) { use(recentRows[selection].content, paste: paste) }
+        case .saved: if savedRows.indices.contains(selection) { use(savedRows[selection].content, paste: paste) }
         }
+    }
+
+    func clearRecent() {
+        history.clear()
+        confirmingClear = false
     }
 
     private func deleteSelected() {
