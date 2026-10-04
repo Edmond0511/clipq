@@ -29,8 +29,9 @@ struct SavedSection: Identifiable {
 }
 
 final class PopupModel: ObservableObject {
-    @Published var tab: Tab = .recent { didSet { selection = 0 } }
-    @Published var query = "" { didSet { selection = 0 } }
+    // Guarded: the search field writes back unchanged values on focus.
+    @Published var tab: Tab = .recent { didSet { if tab != oldValue { selection = 0 } } }
+    @Published var query = "" { didSet { if query != oldValue { selection = 0 } } }
     @Published var selection = 0
     @Published var itemForm: ItemForm?
     @Published var groupForm: GroupForm?
