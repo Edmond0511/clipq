@@ -55,8 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateIcon() {
-        let name = monitor.isPaused ? "pause.circle" : "doc.on.clipboard"
-        statusItem.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "clipq")
+        statusItem.button?.image = MenuBarIcon.image(paused: monitor.isPaused)
     }
 
     @objc private func openPanel() {
