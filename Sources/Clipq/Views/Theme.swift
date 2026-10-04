@@ -3,7 +3,7 @@ import SwiftUI
 
 /// shadcn/ui zinc tokens, resolved per light/dark appearance.
 enum Theme {
-    static let background = dynamic(light: 0xFFFFFF, dark: 0x09090B)
+    static let background = dynamic(light: 0xFFFFFF, dark: 0x18181B)
     static let foreground = dynamic(light: 0x09090B, dark: 0xFAFAFA)
     static let muted = dynamic(light: 0xF4F4F5, dark: 0x27272A)
     static let mutedForeground = dynamic(light: 0x71717A, dark: 0xA1A1AA)
