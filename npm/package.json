@@ -1,0 +1,15 @@
+{
+  "name": "clipq",
+  "version": "0.1.0",
+  "description": "Win+V style clipboard history for macOS: recent copies, saved groups, optional titles.",
+  "keywords": ["clipboard", "macos", "clipboard-manager", "clipboard-history"],
+  "license": "MIT",
+  "os": ["darwin"],
+  "bin": {
+    "clipq": "cli.js"
+  },
+  "files": [
+    "cli.js",
+    "dist/Clipq.app"
+  ]
+}
