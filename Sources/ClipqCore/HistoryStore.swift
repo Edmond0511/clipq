@@ -6,7 +6,14 @@ public final class HistoryStore: ObservableObject {
     public static let fileName = "history.json"
 
     @Published public private(set) var items: [HistoryItem]
-    public let capacity: Int
+    /// Lowering it trims the oldest items right away.
+    public var capacity: Int {
+        didSet {
+            trimToCapacity()
+            persist()
+        }
+    }
+    public var capturesImages = true
     private let storage: Storage
     private let now: () -> Date
 
@@ -23,6 +30,7 @@ public final class HistoryStore: ObservableObject {
     }
 
     public func addImage(png: Data) {
+        guard capturesImages else { return }
         record(hash: sha256(png)) { .image(fileName: storage.writeImage(png)) }
     }
 
@@ -46,11 +54,15 @@ public final class HistoryStore: ObservableObject {
             items.insert(existing, at: 0)
         } else {
             items.insert(HistoryItem(id: UUID(), content: makeContent(), hash: hash, copiedAt: now()), at: 0)
-            while items.count > capacity {
-                storage.deleteFiles(of: items.removeLast().content)
-            }
+            trimToCapacity()
         }
         persist()
+    }
+
+    private func trimToCapacity() {
+        while items.count > capacity {
+            storage.deleteFiles(of: items.removeLast().content)
+        }
     }
 
     private func persist() {

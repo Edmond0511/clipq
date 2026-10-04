@@ -154,3 +154,39 @@ final class SearchTests: XCTestCase {
         XCTAssertEqual(ClipContent.text("\n\n  first line \nsecond", rtf: nil).preview, "first line")
     }
 }
+
+final class HistoryLimitTests: XCTestCase {
+    var root: URL!
+    var storage: Storage!
+
+    override func setUp() {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        storage = Storage(root: root)
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: root)
+    }
+
+    func testLoweringCapacityTrimsOldestAndDeletesTheirImages() {
+        let store = HistoryStore(storage: storage, capacity: 50)
+        store.addImage(png: Data([1]))
+        ["a", "b", "c"].forEach { store.addText($0) }
+        guard case let .image(fileName) = store.items.last!.content else { return XCTFail() }
+
+        store.capacity = 2
+
+        XCTAssertEqual(store.items.map(\.content.preview), ["c", "b"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: storage.imageURL(fileName).path))
+        XCTAssertEqual(HistoryStore(storage: storage).items.count, 2)
+    }
+
+    func testImagesIgnoredWhenCaptureOff() throws {
+        let store = HistoryStore(storage: storage)
+        store.capturesImages = false
+        store.addImage(png: Data([1]))
+        store.addText("still captured")
+        XCTAssertEqual(store.items.map(\.content.preview), ["still captured"])
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: storage.imagesDir.path).isEmpty)
+    }
+}
