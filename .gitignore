@@ -1,0 +1,26 @@
+# Swift / Xcode build output
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# Build artifacts (rebuilt by scripts/build-app.sh and CI)
+npm/dist/
+npm/README.md
+*.tgz
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Secrets
+.env
+.env.*
+.npmrc
+
+# Claude Code personal settings (shared settings.json and hooks/ stay tracked)
+.claude/settings.local.json
+
+# macOS
+.DS_Store
