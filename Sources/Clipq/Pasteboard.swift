@@ -42,19 +42,23 @@ final class ClipboardMonitor {
 
 enum Pasteboard {
     /// Our own write is picked up by the monitor, which moves the item to the top of Recent.
-    static func write(_ content: ClipContent, storage: Storage) {
+    /// Returns false when an image's file is missing and nothing was written.
+    @discardableResult
+    static func write(_ content: ClipContent, storage: Storage) -> Bool {
         let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
         switch content {
         case let .text(text, rtf):
+            pasteboard.clearContents()
             pasteboard.setString(text, forType: .string)
             if let rtf { pasteboard.setData(rtf, forType: .rtf) }
         case let .image(fileName):
-            guard let png = try? Data(contentsOf: storage.imageURL(fileName)) else { return }
+            guard let png = try? Data(contentsOf: storage.imageURL(fileName)) else { return false }
+            pasteboard.clearContents()
             pasteboard.setData(png, forType: .png)
             if let tiff = NSImage(data: png)?.tiffRepresentation {
                 pasteboard.setData(tiff, forType: .tiff)
             }
         }
+        return true
     }
 }
