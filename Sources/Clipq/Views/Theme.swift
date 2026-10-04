@@ -113,6 +113,18 @@ extension ButtonStyle where Self == IconButtonStyle {
     static var icon: IconButtonStyle { IconButtonStyle() }
 }
 
+/// Drags the window from empty space behind it; SwiftUI's own drag gesture needs macOS 15.
+struct WindowDragArea: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { DragView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class DragView: NSView {
+        override func mouseDown(with event: NSEvent) {
+            window?.performDrag(with: event)
+        }
+    }
+}
+
 extension View {
     /// shadcn Input chrome around a plain TextField or a menu label.
     func inputChrome(focused: Bool = false) -> some View {

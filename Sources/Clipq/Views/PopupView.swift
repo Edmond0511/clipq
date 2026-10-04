@@ -64,7 +64,13 @@ struct PopupView: View {
             KeyHints(tab: model.tab)
         }
         .frame(width: 380, height: 460)
-        .background(Theme.background)
+        // Behind everything, so any surface that isn't a control drags the window.
+        .background {
+            ZStack {
+                Theme.background
+                WindowDragArea()
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border))
         .overlay { forms }
@@ -127,7 +133,7 @@ private struct KeyHints: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 36)
-        .background(Theme.muted.opacity(0.4))
+        .background(Theme.muted.opacity(0.4).allowsHitTesting(false))
     }
 
     private func hint(_ keys: String, _ label: String) -> some View {
