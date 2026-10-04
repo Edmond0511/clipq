@@ -42,19 +42,12 @@ struct SettingsView: View {
                 Toggle("", isOn: $launchAtLogin).toggleStyle(.shadSwitch)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
-        .frame(width: 440)
-        .background(Theme.background)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 2)
         .onChange(of: prefs.autoPaste) { on in
             if on && !AutoPaste.isTrusted { AutoPaste.requestPermission() }
         }
         .onChange(of: launchAtLogin) { LoginItem.setEnabled($0) }
-        // Re-read state changed elsewhere: System Settings, or the menu bar's login toggle.
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            hasAccessibility = AutoPaste.isTrusted
-            launchAtLogin = LoginItem.isEnabled
-        }
     }
 }
 
