@@ -113,6 +113,59 @@ extension ButtonStyle where Self == IconButtonStyle {
     static var icon: IconButtonStyle { IconButtonStyle() }
 }
 
+/// shadcn Switch.
+struct ShadSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            Capsule()
+                .fill(configuration.isOn ? Theme.foreground : Theme.border)
+                .frame(width: 34, height: 20)
+                .overlay(alignment: configuration.isOn ? .trailing : .leading) {
+                    Circle()
+                        .fill(Theme.background)
+                        .shadow(color: .black.opacity(0.15), radius: 1, y: 1)
+                        .padding(2)
+                }
+                .animation(.easeOut(duration: 0.12), value: configuration.isOn)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+extension ToggleStyle where Self == ShadSwitchStyle {
+    static var shadSwitch: ShadSwitchStyle { ShadSwitchStyle() }
+}
+
+/// shadcn Tabs-style segmented control: a muted track with the active segment raised.
+struct Segmented<Value: Hashable>: View {
+    @Binding var selection: Value
+    let options: [(label: String, value: Value)]
+    var segmentWidth: CGFloat = 72
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options, id: \.value) { option in
+                let active = selection == option.value
+                Button { selection = option.value } label: {
+                    Text(option.label)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(active ? Theme.foreground : Theme.mutedForeground)
+                        .frame(width: segmentWidth, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(active ? Theme.background : .clear)
+                                .shadow(color: .black.opacity(active ? 0.08 : 0), radius: 1, y: 1)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Theme.muted))
+    }
+}
+
 /// Drags the window from empty space behind it; SwiftUI's own drag gesture needs macOS 15.
 struct WindowDragArea: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView { DragView() }
