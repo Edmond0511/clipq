@@ -1,9 +1,9 @@
 # clipq
 
-clipboard history for macOS.
+Clipboard history for macOS. Press **Cmd+Shift+V** to see what you copied, then pick it again.
 
-- **Recent**: your latest copies (text and images), kept across restarts. Keeps 25 by default, or 50 or 100.
-- **Saved**: items you want to keep, organized into groups, with optional titles.
+- **Recent**: your latest copies (text and images), kept across restarts.
+- **Saved**: items you want to keep, in groups, with optional titles.
 
 ## Install
 
@@ -12,19 +12,19 @@ npm install -g clipq
 clipq start
 ```
 
-Press **Cmd+Shift+V** to open the popup. Requires macOS 13 or later.
+Requires macOS 13 or later.
 
 | Command | |
 |---|---|
 | `clipq start` / `stop` / `status` | Run or stop the background app |
 | `clipq enable-login` / `disable-login` | Start automatically when you log in |
 
-## Using it
+## Use it
 
 | Key | Action |
 |---|---|
 | ↑ ↓ | Move selection |
-| Return or click | Copy the item and close, then press Cmd+V. With Paste automatically on, it pastes for you |
+| Return or click | Copy the item and close, then press Cmd+V |
 | Cmd+Return | Copy only, even with Paste automatically on |
 | Tab, Cmd+1 / Cmd+2 | Switch between Recent and Saved |
 | Type | Search content and titles |
@@ -33,15 +33,14 @@ Press **Cmd+Shift+V** to open the popup. Requires macOS 13 or later.
 | Cmd+, | Open Settings |
 | Esc | Close |
 
-Right-click items for Save, Edit and Delete, and right-click a group header to rename or delete it. Deleting a group moves its items to Ungrouped.
-
-The Clear button on the Recent tab removes all Recent items after asking first. Saved items are never cleared.
-
-The menu bar icon has Pause Capturing, Clear Recent, Launch at Login and Settings.
+- Hover or select a long text, an image or a titled item to see its full contents in a preview card.
+- Right-click an item for Save, Edit and Delete. Right-click a group header to rename or delete it. Deleting a group moves its items to Ungrouped.
+- Clear on the Recent tab deletes all Recent items after asking. Saved items are never cleared.
+- The menu bar icon has Pause Capturing, Clear Recent, Launch at Login and Settings.
 
 ## Settings
 
-Open Settings from the gear icon in the popup, Cmd+, or the menu bar icon.
+Open from the gear in the popup, Cmd+, or the menu bar icon.
 
 | Setting | Default |
 |---|---|
@@ -51,9 +50,11 @@ Open Settings from the gear icon in the popup, Cmd+, or the menu bar icon.
 | Capture images | On |
 | Launch at login | Off |
 
-Paste automatically needs Accessibility access: turn on clipq in System Settings → Privacy & Security → Accessibility. clipq isn't signed with an Apple Developer ID, so macOS may ask again after each update. Until access is granted, items are only copied.
+**Paste automatically** needs Accessibility access. Turn on clipq in System Settings → Privacy & Security → Accessibility. Until then, items are only copied. clipq isn't signed with an Apple Developer ID, so macOS may ask again after an update.
 
-clipq records everything you copy, including passwords from password managers. Pause capturing from the menu bar when that matters. Data is stored in `~/Library/Application Support/clipq/`.
+## Privacy
+
+clipq records everything you copy, including passwords from password managers. Use Pause Capturing in the menu bar when that matters. Everything stays on your Mac in `~/Library/Application Support/clipq/`. Delete that folder to start fresh.
 
 ## Development
 
@@ -64,4 +65,4 @@ open npm/dist/Clipq.app
 scripts/build-app.sh            # universal (arm64 + x86_64) build used for releases
 ```
 
-Pushing a `v*` tag runs `.github/workflows/release.yml`, which tests, builds and publishes to npm (needs an `NPM_TOKEN` secret).
+Pushing a `v*` tag runs `.github/workflows/release.yml`, which tests, builds and publishes to npm. It needs an `NPM_TOKEN` secret, and the version in `npm/package.json` must be bumped first.
