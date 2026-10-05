@@ -1,5 +1,5 @@
 {
-  "name": "clipq",
+  "name": "@hamster0511/clipq",
   "version": "0.1.0",
   "description": "Win+V style clipboard history for macOS: recent copies, saved groups, optional titles.",
   "keywords": [
@@ -27,5 +27,8 @@
   "files": [
     "cli.js",
     "dist/Clipq.app"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

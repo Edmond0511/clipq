@@ -8,7 +8,7 @@ Clipboard history for macOS. Press **Cmd+Shift+V** to see what you copied, then 
 ## Install
 
 ```sh
-npm install -g clipq
+npm install -g @hamster0511/clipq
 clipq start
 ```
 
