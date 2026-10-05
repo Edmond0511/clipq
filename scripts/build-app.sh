@@ -7,17 +7,21 @@ cd "$(dirname "$0")/.."
 VERSION=$(node -p "require('./npm/package.json').version")
 APP=npm/dist/Clipq.app
 
+rm -rf "$APP"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
 if [[ "${1:-}" == "--native" ]]; then
   swift build -c release
   BIN_DIR=$(swift build -c release --show-bin-path)
+  cp "$BIN_DIR/Clipq" "$APP/Contents/MacOS/Clipq"
 else
-  swift build -c release --arch arm64 --arch x86_64
-  BIN_DIR=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
+  # One build per arch, merged with lipo: Xcode 16's combined multi-arch build compiles
+  # Clipq before the KeyboardShortcuts module exists ("no such module").
+  for arch in arm64 x86_64; do swift build -c release --arch "$arch"; done
+  BIN_DIR=$(swift build -c release --arch arm64 --show-bin-path)
+  lipo -create "$BIN_DIR/Clipq" "$(swift build -c release --arch x86_64 --show-bin-path)/Clipq" \
+    -output "$APP/Contents/MacOS/Clipq"
 fi
-
-rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/Clipq" "$APP/Contents/MacOS/Clipq"
 # Ad-hoc signatures default to a per-build hash, so macOS drops the Accessibility grant
 # on every update. An identifier-only requirement keeps it. Signed before the bundle
 # exists around it, because codesign refuses the bundle (see below).
