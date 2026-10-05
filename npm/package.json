@@ -2,9 +2,25 @@
   "name": "clipq",
   "version": "0.1.0",
   "description": "Win+V style clipboard history for macOS: recent copies, saved groups, optional titles.",
-  "keywords": ["clipboard", "macos", "clipboard-manager", "clipboard-history"],
+  "keywords": [
+    "clipboard",
+    "macos",
+    "clipboard-manager",
+    "clipboard-history"
+  ],
+  "homepage": "https://github.com/Edmond0511/clipq#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Edmond0511/clipq.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Edmond0511/clipq/issues"
+  },
+  "author": "Edmond Y.",
   "license": "MIT",
-  "os": ["darwin"],
+  "os": [
+    "darwin"
+  ],
   "bin": {
     "clipq": "cli.js"
   },
