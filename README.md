@@ -1,6 +1,6 @@
 # clipq
 
-Clipboard history for macOS. Press **Cmd+Shift+V** to see what you copied, then pick it again.
+Clipboard history for macOS.
 
 - **Recent**: your latest copies (text and images), kept across restarts.
 - **Saved**: items you want to keep, in groups, with optional titles.
